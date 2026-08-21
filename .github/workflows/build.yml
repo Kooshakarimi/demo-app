@@ -1,0 +1,44 @@
+name: Two-Job Build Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set build version
+        run: echo "VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
+
+      - name: Build application
+        run: |
+          mkdir -p dist
+          echo "Version: $VERSION" > dist/app.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-build
+          path: dist/
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build
+          path: dist/
+
+      - name: Verify build output exists
+        run: test -f dist/app.txt
+
+      - name: Show build version
+        run: cat dist/app.txt
