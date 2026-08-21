@@ -36,3 +36,4 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+# Test cache on second run
