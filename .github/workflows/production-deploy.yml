@@ -1,0 +1,41 @@
+name: Gated Production Deploy with Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy'
+        required: true
+        type: string
+        default: 'latest'
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy selected version
+        run: |
+          echo "Deploying version: ${{ inputs.version }}"
+          echo "Deploy command would run here"
+
+      - name: Smoke test
+        id: smoke
+        run: |
+          for i in {1..10}; do
+            if curl -sf https://YOUR-DOMAIN/health; then
+              echo "Production is healthy"
+              exit 0
+            fi
+            sleep 3
+          done
+
+          echo "Smoke test failed"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Rolling back to previous known-good version"
+          echo "Previous deploy command would run here"
