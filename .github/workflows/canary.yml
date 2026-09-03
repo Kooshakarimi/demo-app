@@ -1,0 +1,36 @@
+name: Canary Deployment Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  canary-test:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test Canary 20 times
+        run: |
+          failures=0
+
+          for i in {1..20}; do
+            echo "Request $i"
+
+            if curl -sf http://localhost:5001/health > /dev/null; then
+              echo "Request $i: SUCCESS"
+            else
+              echo "Request $i: FAILED"
+              failures=$((failures + 1))
+            fi
+          done
+
+          echo "Total failures: $failures"
+
+          if [ "$failures" -gt 2 ]; then
+            echo "Canary failed — ROLLBACK"
+            exit 1
+          else
+            echo "Canary passed — PROMOTE"
+          fi
